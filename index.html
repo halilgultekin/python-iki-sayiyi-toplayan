@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soru Bankası</title>
+</head>
+<body>
+    <h1>Soru Bankası</h1>
+    
+    <!-- Sorular eklemek için form -->
+    <h3>Soru Ekle</h3>
+    <form id="soruForm">
+        <label for="soru">Soru:</label>
+        <input type="text" id="soru" required>
+        <label for="cevap">Cevap:</label>
+        <input type="text" id="cevap" required>
+        <button type="submit">Ekle</button>
+    </form>
+
+    <!-- Arama kutusu -->
+    <h3>Arama</h3>
+    <input type="text" id="aramaKutusu" placeholder="Soru ara...">
+
+    <h3>Sorular</h3>
+    <ul id="soruListesi">
+        <!-- Sorular burada listelenecek -->
+    </ul>
+
+    <script>
+        const soruForm = document.getElementById('soruForm');
+        const soruInput = document.getElementById('soru');
+        const cevapInput = document.getElementById('cevap');
+        const soruListesi = document.getElementById('soruListesi');
+        const aramaKutusu = document.getElementById('aramaKutusu');
+        let duzenlemeIndex = -1; // Düzenleme yapılacak sorunun index'i
+
+        // Soruları localStorage'a kaydedip ekranda göster
+        function sorulariYukle() {
+            const sorular = JSON.parse(localStorage.getItem('sorular')) || [];
+            const aramaTermi = aramaKutusu.value.toLowerCase(); // Arama kutusundaki metni al
+
+            // Listeyi temizle
+            soruListesi.innerHTML = ''; 
+
+            // Soruları filtrele
+            const filtrelenmisSorular = sorular.filter(soru => 
+                soru.soru.toLowerCase().includes(aramaTermi) || soru.cevap.toLowerCase().includes(aramaTermi)
+            );
+
+            // Filtrelenmiş soruları ekranda göster
+            filtrelenmisSorular.forEach((soru, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${soru.soru} - Cevap: ${soru.cevap}`;
+
+                // Silme butonu
+                const silButonu = document.createElement('button');
+                silButonu.textContent = 'Sil';
+                silButonu.addEventListener('click', () => {
+                    silSoru(index);
+                });
+
+                // Düzenleme butonu
+                const duzenleButonu = document.createElement('button');
+                duzenleButonu.textContent = 'Düzenle';
+                duzenleButonu.addEventListener('click', () => {
+                    duzenleSoru(index);
+                });
+
+                // Butonları li elemanına ekle
+                li.appendChild(silButonu);
+                li.appendChild(duzenleButonu);
+                soruListesi.appendChild(li);
+            });
+        }
+
+        // Yeni soru eklemek
+        soruForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const soru = soruInput.value;
+            const cevap = cevapInput.value;
+
+            if (duzenlemeIndex >= 0) {
+                // Düzenleme yapılacaksa, mevcut soruyu güncelle
+                const sorular = JSON.parse(localStorage.getItem('sorular')) || [];
+                sorular[duzenlemeIndex] = { soru, cevap };
+                localStorage.setItem('sorular', JSON.stringify(sorular));
+                duzenlemeIndex = -1; // Düzenleme işlemi bitti
+            } else {
+                // Yeni soru ekle
+                const sorular = JSON.parse(localStorage.getItem('sorular')) || [];
+                sorular.push({ soru, cevap });
+                localStorage.setItem('sorular', JSON.stringify(sorular));
+            }
+
+            // Formu temizle
+            soruInput.value = '';
+            cevapInput.value = '';
+
+            // Soruları tekrar yükle
+            sorulariYukle();
+        });
+
+        // Bir soruyu silmek
+        function silSoru(index) {
+            const sorular = JSON.parse(localStorage.getItem('sorular')) || [];
+            sorular.splice(index, 1); // Belirtilen index'teki soruyu sil
+
+            // Silinen soruları localStorage'a kaydet
+            localStorage.setItem('sorular', JSON.stringify(sorular));
+
+            // Soruları tekrar yükle
+            sorulariYukle();
+        }
+
+        // Bir soruyu düzenlemek
+        function duzenleSoru(index) {
+            const sorular = JSON.parse(localStorage.getItem('sorular')) || [];
+            const soru = sorular[index];
+
+            // Düzenleme formuna soruyu ve cevabı yerleştir
+            soruInput.value = soru.soru;
+            cevapInput.value = soru.cevap;
+
+            // Düzenleme index'ini kaydet
+            duzenlemeIndex = index;
+        }
+
+        // Arama kutusuna yazıldıkça soruları filtrele
+        aramaKutusu.addEventListener('input', sorulariYukle);
+
+        // Sayfa yüklendiğinde soruları yükle
+        window.onload = sorulariYukle;
+    </script>
+</body>
+</html>
